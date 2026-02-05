@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test - Himanshu Hardware</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-page">
+        <h1>Authentication Test Page</h1>
+        <div class="form-container">
+            <h2>Current Status</h2>
+            <div id="statusInfo">
+                <!-- Status will be displayed here -->
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Test Accounts:</h3>
+                <p><strong>Admin:</strong> username: admin, password: admin123</p>
+                <p><strong>Customer:</strong> username: customer, password: customer123</p>
+                
+                <h3>Actions:</h3>
+                <button onclick="checkAuth()" style="margin: 10px;">Check Authentication</button>
+                <button onclick="clearAll()" style="margin: 10px; background-color: #dc3545;">Clear All Data</button>
+                <button onclick="showUsers()" style="margin: 10px; background-color: #6c757d;">Show All Users</button>
+                <button onclick="goToLogin()" style="margin: 10px; background-color: #0077b6;">Go to Login</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function checkAuth() {
+            const currentUser = localStorage.getItem('currentUser');
+            const cart = localStorage.getItem('cart');
+            const allUsers = Object.keys(localStorage).filter(key => key.startsWith('user_'));
+            
+            let status = '<h3>Authentication Status:</h3>';
+            
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                status += `<p><strong>✅ Logged in as:</strong> ${user.username} (${user.role})</p>`;
+                status += `<p><strong>Login time:</strong> ${user.loginTime}</p>`;
+            } else {
+                status += '<p><strong>❌ Not logged in</strong></p>';
+            }
+            
+            status += `<p><strong>Cart items:</strong> ${cart ? JSON.parse(cart).length : 0}</p>`;
+            status += `<p><strong>Registered users:</strong> ${allUsers.length}</p>`;
+            
+            // Show all registered users
+            if (allUsers.length > 0) {
+                status += '<h4>Registered Users:</h4>';
+                allUsers.forEach(key => {
+                    const user = JSON.parse(localStorage.getItem(key));
+                    status += `<p>• ${user.username} (${user.email}) - ${user.joinDate}</p>`;
+                });
+            }
+            
+            document.getElementById('statusInfo').innerHTML = status;
+        }
+        
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all data? This will log you out and remove all users.')) {
+                localStorage.clear();
+                alert('All data cleared!');
+                checkAuth();
+            }
+        }
+        
+        function showUsers() {
+            const allUsers = Object.keys(localStorage).filter(key => key.startsWith('user_'));
+            let userList = '<h4>All Users in localStorage:</h4>';
+            
+            if (allUsers.length === 0) {
+                userList += '<p>No registered users found.</p>';
+            } else {
+                allUsers.forEach(key => {
+                    const user = JSON.parse(localStorage.getItem(key));
+                    userList += `<p><strong>${key}:</strong> ${JSON.stringify(user, null, 2)}</p>`;
+                });
+            }
+            
+            document.getElementById('statusInfo').innerHTML = userList;
+        }
+        
+        function goToLogin() {
+            window.location.href = 'login.html';
+        }
+        
+        // Check auth status on page load
+        window.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>

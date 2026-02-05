@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Himanshu Hardware - Order Confirmation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-page">
+        <div class="nav-bar">
+            <h1>Himanshu Hardware</h1>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="orders.html">My Orders</a>
+                <a href="login.html" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <div class="confirmation-container">
+                <div class="success-icon">✓</div>
+                <h2>Order Confirmed!</h2>
+                <p>Thank you for your purchase. Your order has been successfully placed.</p>
+                
+                <div class="order-details">
+                    <h3>Order Details</h3>
+                    <div id="orderInfo">
+                        <!-- Order details will be displayed here -->
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button onclick="downloadReceipt()" class="download-btn">Download Receipt</button>
+                    <button onclick="viewOrders()" class="view-orders-btn">View My Orders</button>
+                    <button onclick="continueShopping()" class="continue-btn">Continue Shopping</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentOrder = null;
+
+        function loadOrderDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('orderId');
+            
+            if (!orderId) {
+                window.location.href = 'orders.html';
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            currentOrder = orders.find(order => order.id == orderId);
+            
+            if (!currentOrder) {
+                window.location.href = 'orders.html';
+                return;
+            }
+            
+            displayOrderInfo();
+        }
+
+        function displayOrderInfo() {
+            const orderInfo = document.getElementById('orderInfo');
+            
+            orderInfo.innerHTML = `
+                <div class="order-row">
+                    <span>Order ID:</span>
+                    <span>#${currentOrder.id}</span>
+                </div>
+                <div class="order-row">
+                    <span>Order Date:</span>
+                    <span>${new Date(currentOrder.orderDate).toLocaleDateString()}</span>
+                </div>
+                <div class="order-row">
+                    <span>Total Amount:</span>
+                    <span>₹${currentOrder.total}</span>
+                </div>
+                <div class="order-row">
+                    <span>Status:</span>
+                    <span class="status-confirmed">${currentOrder.status}</span>
+                </div>
+                <div class="order-items">
+                    <h4>Items Ordered:</h4>
+                    ${currentOrder.items.map(item => `
+                        <div class="order-item-row">
+                            <span>${item.name} x ${item.quantity}</span>
+                            <span>₹${item.price * item.quantity}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function downloadReceipt() {
+            if (currentOrder) {
+                const receiptContent = `
+HIMANSHU HARDWARE
+===================
+
+Receipt #${currentOrder.id}
+Date: ${new Date(currentOrder.orderDate).toLocaleDateString()}
+Customer: ${currentOrder.customer.fullName || currentOrder.customer.username}
+
+Items:
+${currentOrder.items.map(item => `${item.name} x ${item.quantity} - ₹${item.price * item.quantity}`).join('\n')}
+
+Total: ₹${currentOrder.total}
+
+Thank you for your purchase!
+===================
+                `;
+                
+                const blob = new Blob([receiptContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `receipt_${currentOrder.id}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function viewOrders() {
+            window.location.href = 'orders.html';
+        }
+
+        function continueShopping() {
+            window.location.href = 'products.html';
+        }
+
+        // Event listeners
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('cart');
+        });
+
+        // Initialize page
+        loadOrderDetails();
+
+        // Check if user is logged in
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

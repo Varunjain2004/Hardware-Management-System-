@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Himanshu Hardware - Checkout</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-page">
+        <div class="nav-bar">
+            <h1>Himanshu Hardware</h1>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="orders.html">My Orders</a>
+                <a href="login.html" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <h2>Checkout</h2>
+            
+            <div class="checkout-container">
+                <div class="order-summary">
+                    <h3>Order Summary</h3>
+                    <div id="orderItems">
+                        <!-- Order items will be displayed here -->
+                    </div>
+                    <div class="order-total">
+                        <h4>Total: ₹<span id="orderTotal">0</span></h4>
+                    </div>
+                </div>
+                
+                <div class="payment-form">
+                    <h3>Payment Details</h3>
+                    <form id="paymentForm">
+                        <input type="text" id="cardName" placeholder="Card Holder Name" required>
+                        <input type="text" id="cardNumber" placeholder="Card Number" required>
+                        <div class="card-row">
+                            <input type="text" id="cardExpiry" placeholder="MM/YY" required>
+                            <input type="text" id="cardCvv" placeholder="CVV" required>
+                        </div>
+                        <button type="submit" class="payment-btn">Complete Payment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        function displayOrderSummary() {
+            const orderItems = document.getElementById('orderItems');
+            const orderTotal = document.getElementById('orderTotal');
+            
+            if (cart.length === 0) {
+                window.location.href = 'cart.html';
+                return;
+            }
+            
+            orderItems.innerHTML = cart.map(item => `
+                <div class="order-item">
+                    <div class="order-item-info">
+                        <span>${item.name} x ${item.quantity}</span>
+                        <span>₹${item.price * item.quantity}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            orderTotal.textContent = total;
+        }
+
+        function completePayment() {
+            const cardName = document.getElementById('cardName').value;
+            const cardNumber = document.getElementById('cardNumber').value;
+            const cardExpiry = document.getElementById('cardExpiry').value;
+            const cardCvv = document.getElementById('cardCvv').value;
+            
+            if (!cardName || !cardNumber || !cardExpiry || !cardCvv) {
+                alert('Please fill in all payment details');
+                return;
+            }
+            
+            // Create order
+            const order = {
+                id: Date.now(),
+                items: [...cart],
+                total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                orderDate: new Date().toISOString(),
+                status: 'Confirmed',
+                customer: JSON.parse(localStorage.getItem('currentUser'))
+            };
+            
+            // Save order
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.push(order);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            
+            // Clear cart
+            localStorage.removeItem('cart');
+            
+            // Generate receipt
+            generateReceipt(order);
+            
+            // Redirect to confirmation
+            window.location.href = 'order-confirmation.html?orderId=' + order.id;
+        }
+
+        function generateReceipt(order) {
+            const receiptContent = `
+HIMANSHU HARDWARE
+===================
+
+Receipt #${order.id}
+Date: ${new Date(order.orderDate).toLocaleDateString()}
+Customer: ${order.customer.fullName || order.customer.username}
+
+Items:
+${order.items.map(item => `${item.name} x ${item.quantity} - ₹${item.price * item.quantity}`).join('\n')}
+
+Total: ₹${order.total}
+
+Thank you for your purchase!
+===================
+            `;
+            
+            const blob = new Blob([receiptContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `receipt_${order.id}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            completePayment();
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('cart');
+        });
+
+        // Initialize page
+        displayOrderSummary();
+
+        // Check if user is logged in
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

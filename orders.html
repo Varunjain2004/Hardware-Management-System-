@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Himanshu Hardware - My Orders</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-page">
+        <div class="nav-bar">
+            <h1>Himanshu Hardware</h1>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="orders.html" class="active">My Orders</a>
+                <a href="login.html" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <h2>My Orders</h2>
+            
+            <div id="ordersList" class="orders-list">
+                <!-- Orders will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function displayOrders() {
+            const ordersList = document.getElementById('ordersList');
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Filter orders for current user
+            const userOrders = orders.filter(order => 
+                order.customer.username === currentUser.username || 
+                order.customer.fullName === currentUser.fullName
+            );
+            
+            if (userOrders.length === 0) {
+                ordersList.innerHTML = '<p class="no-orders">No orders found. Start shopping to see your orders here!</p>';
+                return;
+            }
+            
+            ordersList.innerHTML = userOrders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-info">
+                            <h3>Order #${order.id}</h3>
+                            <p class="order-date">${new Date(order.orderDate).toLocaleDateString()}</p>
+                        </div>
+                        <div class="order-status">
+                            <span class="status-badge ${order.status.toLowerCase()}">${order.status}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="order-items">
+                        ${order.items.map(item => `
+                            <div class="order-item">
+                                <img src="${item.image}" alt="${item.name}" class="order-item-image">
+                                <div class="order-item-details">
+                                    <h4>${item.name}</h4>
+                                    <p>Quantity: ${item.quantity}</p>
+                                    <p>Price: ₹${item.price}</p>
+                                </div>
+                                <div class="order-item-total">
+                                    ₹${item.price * item.quantity}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="order-footer">
+                        <div class="order-total">
+                            <strong>Total: ₹${order.total}</strong>
+                        </div>
+                        <div class="order-actions">
+                            <button onclick="downloadReceipt(${order.id})" class="download-btn">Download Receipt</button>
+                            <button onclick="reorder(${order.id})" class="reorder-btn">Reorder</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function downloadReceipt(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const order = orders.find(o => o.id == orderId);
+            
+            if (order) {
+                const receiptContent = `
+HIMANSHU HARDWARE
+===================
+
+Receipt #${order.id}
+Date: ${new Date(order.orderDate).toLocaleDateString()}
+Customer: ${order.customer.fullName || order.customer.username}
+
+Items:
+${order.items.map(item => `${item.name} x ${item.quantity} - ₹${item.price * item.quantity}`).join('\n')}
+
+Total: ₹${order.total}
+
+Thank you for your purchase!
+===================
+                `;
+                
+                const blob = new Blob([receiptContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `receipt_${order.id}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function reorder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const order = orders.find(o => o.id == orderId);
+            
+            if (order) {
+                // Add items back to cart
+                const cart = order.items.map(item => ({
+                    ...item,
+                    quantity: item.quantity
+                }));
+                
+                localStorage.setItem('cart', JSON.stringify(cart));
+                window.location.href = 'cart.html';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('cart');
+        });
+
+        // Initialize page
+        displayOrders();
+
+        // Check if user is logged in
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

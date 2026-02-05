@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Himanshu Hardware - Sign Up</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-page">
+        <h1>Join Himanshu Hardware</h1>
+        <div class="form-container">
+            <h2>Sign Up</h2>
+            <form id="signupForm">
+                <input type="text" id="fullName" placeholder="Full Name" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="tel" id="phone" placeholder="Phone Number" required>
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                <button type="submit">Sign Up</button>
+            </form>
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+            <p id="signup-msg"></p>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is already logged in on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                // User is already logged in, redirect to appropriate page
+                const user = JSON.parse(currentUser);
+                if (user.role === 'admin') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    window.location.href = 'products.html';
+                }
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Clear any previous messages
+            document.getElementById('signup-msg').textContent = '';
+            
+            // Validation checks
+            if (password !== confirmPassword) {
+                document.getElementById('signup-msg').textContent = 'Passwords do not match!';
+                return;
+            }
+            
+            if (password.length < 6) {
+                document.getElementById('signup-msg').textContent = 'Password must be at least 6 characters long!';
+                return;
+            }
+            
+            // Check if username already exists
+            const existingUser = localStorage.getItem('user_' + username);
+            if (existingUser) {
+                document.getElementById('signup-msg').textContent = 'Username already exists! Please choose a different username or login.';
+                return;
+            }
+            
+            // Check if email already exists
+            const allUsers = Object.keys(localStorage).filter(key => key.startsWith('user_'));
+            for (let key of allUsers) {
+                const user = JSON.parse(localStorage.getItem(key));
+                if (user.email === email) {
+                    document.getElementById('signup-msg').textContent = 'Email already registered! Please use a different email or login.';
+                    return;
+                }
+            }
+            
+            // Check for reserved usernames
+            if (username === 'admin' || username === 'customer') {
+                document.getElementById('signup-msg').textContent = 'Username is reserved! Please choose a different username.';
+                return;
+            }
+            
+            // Create new user
+            const userInfo = {
+                fullName: fullName,
+                email: email,
+                phone: phone,
+                username: username,
+                password: password,
+                role: 'customer',
+                joinDate: new Date().toISOString()
+            };
+            
+            // Save user to localStorage
+            localStorage.setItem('user_' + username, JSON.stringify(userInfo));
+            
+            // Also save to customers list for admin dashboard
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            customers.push({
+                id: customers.length + 1,
+                name: fullName,
+                email: email,
+                phone: phone,
+                username: username,
+                joinDate: new Date().toISOString().split('T')[0]
+            });
+            localStorage.setItem('customers', JSON.stringify(customers));
+            
+            // Show success message
+            document.getElementById('signup-msg').textContent = 'Account created successfully! Redirecting to login...';
+            document.getElementById('signup-msg').style.color = 'green';
+            
+            // Clear form
+            document.getElementById('signupForm').reset();
+            
+            // Redirect to login page after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

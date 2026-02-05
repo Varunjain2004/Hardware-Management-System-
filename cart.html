@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Himanshu Hardware - Shopping Cart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="form-page">
+        <div class="nav-bar">
+            <h1>Himanshu Hardware</h1>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html" class="active">Cart <span id="cartCount">0</span></a>
+                <a href="orders.html">My Orders</a>
+                <a href="login.html" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <h2>Shopping Cart</h2>
+            
+            <div id="cartItems" class="cart-items">
+                <!-- Cart items will be displayed here -->
+            </div>
+            
+            <div class="cart-summary">
+                <div class="total-section">
+                    <h3>Total: ₹<span id="cartTotal">0</span></h3>
+                </div>
+                <button id="checkoutBtn" class="checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        function displayCart() {
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="empty-cart">Your cart is empty</p>';
+                cartTotal.textContent = '0';
+                document.getElementById('checkoutBtn').style.display = 'none';
+                return;
+            }
+            
+            cartItems.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                    <div class="cart-item-details">
+                        <h4>${item.name}</h4>
+                        <p class="cart-item-category">${item.category}</p>
+                        <p class="cart-item-price">₹${item.price}</p>
+                    </div>
+                    <div class="cart-item-quantity">
+                        <button onclick="updateQuantity(${item.id}, -1)" class="quantity-btn">-</button>
+                        <span>${item.quantity}</span>
+                        <button onclick="updateQuantity(${item.id}, 1)" class="quantity-btn">+</button>
+                    </div>
+                    <div class="cart-item-total">
+                        ₹${item.price * item.quantity}
+                    </div>
+                    <button onclick="removeFromCart(${item.id})" class="remove-btn">Remove</button>
+                </div>
+            `).join('');
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            cartTotal.textContent = total;
+            document.getElementById('checkoutBtn').style.display = 'block';
+        }
+
+        function updateQuantity(productId, change) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    displayCart();
+                    updateCartCount();
+                }
+            }
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            displayCart();
+            updateCartCount();
+        }
+
+        function updateCartCount() {
+            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+            document.getElementById('cartCount').textContent = cartCount;
+        }
+
+        function proceedToCheckout() {
+            if (cart.length > 0) {
+                window.location.href = 'checkout.html';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('cart');
+        });
+
+        // Initialize page
+        displayCart();
+        updateCartCount();
+
+        // Check if user is logged in
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
